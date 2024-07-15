@@ -12,16 +12,15 @@ class Model
     protected QueryBuilder $queryBuilder;
     protected string $tableName;
 
-    //Kết nối DB
     public function __construct()
     {
         $connectionParams = [
-            'dbname'    =>  $_ENV['DB_NAME'],
-            'user'      =>  $_ENV['DB_USERNAME'],
-            'password'  =>  $_ENV['DB_PASSWORD'],
-            'host'      =>  $_ENV['DB_HOST'],
-            'port'      =>  $_ENV['DB_PORT'],
-            'driver'    =>  $_ENV['DB_DRIVER'],
+            'dbname'    => $_ENV['DB_NAME'],
+            'user'      => $_ENV['DB_USERNAME'],
+            'password'  => $_ENV['DB_PASSWORD'],
+            'host'      => $_ENV['DB_HOST'],
+            'port'      => $_ENV['DB_PORT'],
+            'driver'    => $_ENV['DB_DRIVER'],
         ];
 
         $this->conn = DriverManager::getConnection($connectionParams);
@@ -29,29 +28,30 @@ class Model
         $this->queryBuilder = $this->conn->createQueryBuilder();
     }
 
-    //CRUD
+    public function getConnection()
+    {
+        return $this->conn;
+    }
 
-    //Lấy toàn bộ dữ liệu của 1 bảng
+    // CRUD
     public function all()
     {
         return $this->queryBuilder
         ->select('*')
         ->from($this->tableName)
-        ->orderBy('id','DESC')
+        ->orderBy('id', 'desc')
         ->fetchAllAssociative();
     }
 
-    //Lấy 1 tổng
     public function count()
     {
         return $this->queryBuilder
-        ->select("COUNT * as $this->tableName")
+        ->select("COUNT(*) as $this->tableName")
         ->from($this->tableName)
         ->fetchOne();
     }
 
-    //Phân trang
-    public function paginate($page = 1, $perPage = 10)
+    public function paginate($page = 1, $perPage = 5)
     {
         $queryBuilder = clone($this->queryBuilder);
 
@@ -64,79 +64,73 @@ class Model
         ->from($this->tableName)
         ->setFirstResult($offset)
         ->setMaxResults($perPage)
-        ->orderBy('id','DESC')
+        ->orderBy('id', 'desc')
         ->fetchAllAssociative();
 
         return [$data, $totalPage];
     }
 
-    //Lấy dữ liệu của 1 đối tượng theo id
     public function findByID($id)
     {
         return $this->queryBuilder
-        ->select('*')
-        ->from($this->tableName)
-        ->where('id = ?')
-        ->setParameter(0, $id)
-        ->fetchAssociative();
+            ->select('*')
+            ->from($this->tableName)
+            ->where('id = ?')
+            ->setParameter(0, $id)
+            ->fetchAssociative();
     }
 
-    //Thêm 1 đối tượng
     public function insert(array $data)
     {
         if (!empty($data)) {
             $query = $this->queryBuilder->insert($this->tableName);
 
             $index = 0;
-
-            foreach ($data as $key => $value) {
-                $query->setValue($key, '?')
-                ->setParameter($index, $value);
-
+            foreach($data as $key => $value) {
+                $query->setValue($key, '?')->setParameter($index, $value);
+                
                 ++$index;
             }
 
             $query->executeQuery();
+
             return true;
         }
+        
         return false;
     }
 
-    //Sửa 1 đối tượng
     public function update($id, array $data)
     {
         if (!empty($data)) {
             $query = $this->queryBuilder->update($this->tableName);
 
             $index = 0;
-
-            foreach ($data as $key => $value) {
-                $query->set($key, '?')
-                ->setParameter($index, $value);
+            foreach($data as $key => $value) {
+                $query->set($key, '?')->setParameter($index, $value);
 
                 ++$index;
             }
 
             $query->where('id = ?')
-            ->setParameter($index, $id)
-            ->executeQuery();
+                ->setParameter(count($data), $id)
+                ->executeQuery();
 
             return true;
         }
+        
         return false;
     }
 
-    //Xóa 1 đối tượng
     public function delete($id)
-    {
+    {        
         return $this->queryBuilder
-        ->delete($this->tableName)
-        ->where('id = ?')
-        ->setParameter(0, $id)
-        ->executeQuery();
+            ->delete($this->tableName)
+            ->where('id = ?')
+            ->setParameter(0, $id)
+            ->executeQuery();
     }
 
-    //Huỷ kết nối DB
     public function __destruct()
     {
         $this->conn = null;

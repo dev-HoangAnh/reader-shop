@@ -14,6 +14,33 @@ if (!function_exists('url')) {
     }
 }
 
+if (!function_exists('is_logged')) { // Check đã đăng nhập
+    function is_logged() {
+        return isset($_SESSION['user']);
+    }
+}
+
+if (!function_exists('is_admin')) { // Check là admin
+    function is_admin() {
+        return is_logged() && $_SESSION['user']['type'] == 'admin';
+    }
+}
+
+if (!function_exists('avoid_login')) { // Bỏ qua trang Login khi đã đăng nhập
+    function avoid_login() {
+        if (is_logged()) {
+
+            if ($_SESSION['user']['type'] == 'admin') {
+                header('Location: ' . url('admin/') );
+                exit;
+            }
+            
+            header('Location: ' . url() );
+            exit;
+        }
+    }
+}
+
 if (!function_exists('auth_check')) {
     function auth_check() {
         if (isset($_SESSION['user'])) {
